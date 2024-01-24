@@ -1,8 +1,25 @@
-classdef BayesPICDSC < handle
+classdef BPIC < handle
+    % constants
+    properties(Constant)
+        % BSO
+        BSO_INIT_NO     = 0;
+        BSO_INIT_MMSE   = 1;
+        BSO_INIT_MRC    = 2;        % in Alva's paper, he calls this matched filter
+        BSO_INIT_ZF     = 3;        % x_hat=inv(H'*H)*H'*y (this requires y.len >= x.len)
+        BSO_INIT_TYPES  = [BPIC.BSO_INIT_NO, BPIC.BSO_INIT_MMSE, BPIC.BSO_INIT_MRC, BPIC.BSO_INIT_ZF];
+        BSO_VAR_APPRO   = 1;        % use approximated variance
+        BSO_VAR_ACCUR   = 2;        % use accurate variance (will update in the iterations)
+        BSO_VAR_TYPES   = [BPIC.BSO_VAR_APPRO, BPIC.BSO_VAR_ACCUR];
+        % DSC
+        % DSC - instantaneous square error
+        DSC_ISE_NO      = 0;        % use the error directly
+        DSC_ISE_MRC     = 1;        % in Alva's paper, he calls this matched filter
+        DSC_ISE_ZF      = 2;
+    end
     properties
         constellation {mustBeNumeric}
-        MMSE = true
-        VarUpdate = false
+        bso_init = BPIC.BSO_INIT_MMSE;
+        bso_var = BPIC.BSO_VAR_APPRO;
         min_var {mustBeNumeric} = eps       % the default minimal variance is 2.2204e-16
         iter_num = 10                       % maximal iteration
     end
