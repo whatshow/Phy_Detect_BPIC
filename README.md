@@ -3,13 +3,19 @@ This detection method is proposed in [A Bayesian Receiver With Improved Complexi
 > Kosasih, A., Miloslavskaya, V., Hardjawana, W., She, C., Wen, C. K., & Vucetic, B. (2021). A Bayesian receiver with improved complexity-reliability trade-off in massive MIMO systems. *IEEE Transactions on Communications*, 69(9), 6251-6266.
 * **In another local repositiory, add this module**
     ```sh
+    git submodule add git@github.com:whatshow/Phy_Detect_BPIC.git Modules/Detect_BPIC
     ```
 * **import this module**
     * Matlab
         ```matlab
+        addpath("Modules/Detect_BPIC");
         ```
     * Python
         ```python
+        if '.' not in __name__ :
+            from Modules.Detect_BPIC.BPIC import BPIC
+        else:
+            from .Modules.Detect_BPIC.BPIC import BPIC
         ```
 
 ## How to use
