@@ -20,7 +20,31 @@ This detection method is proposed in [A Bayesian Receiver With Improved Complexi
 
 ## How to use
 All Bayesian PIC-DSC detector codes are uniform in matlab and python as a class of `BPIC`. This class is the whole process of the detection. This section will illustrate the methods of this class following the detection process.
-
+* BPIC<br>
+    `@constellation:` the constellation, a vector.<br>
+    `@bso_mean_init`: 1st iteration method in **BSO** to calculate the mean. Default: `BPIC.BSO_INIT_MMSE`, others: `BPIC.BSO_INIT_MRC, BPIC.BSO_INIT_ZF` (`BPIC.BSO_INIT_NO` should not be used but you can try)<br>
+    `@bso_mean_cal`: other iteration method in **BSO** to calculate the mean. Default: `BPIC.BSO_MEAN_CAL_MRC` (`BPIC.BSO_MEAN_CAL_ZF` should not be used but you can try)<br>
+    `@bso_var`: use approximate or accurate variance in **BSO**. Default: `BPIC.BSO_VAR_APPRO`, others: `BPIC.BSO_VAR_ACCUR`<br>
+    `@bso_var_cal`: the method in **BSO** to calculate the variance. Default: `BPIC.BSO_VAR_CAL_MRC`, others: `BPIC.BSO_VAR_CAL_MRC` (`BSO_VAR_CAL_ZF` should not be used but you can try)<br>
+    `@dsc_ise`: how to calculate the instantaneous square error. Default: `BPIC.DSC_ISE_MRC`, others: `BPIC.DSC_ISE_NO, BPIC.DSC_ISE_ZF, BPIC.DSC_ISE_MMSE`<br>
+    `@dsc_mean_prev_sour`: the source of previous mean in DSC. Default: `BPIC.DSC_MEAN_PREV_SOUR_BSE`, others: `BPIC.DSC_MEAN_PREV_SOUR_DSC`<br>
+    `@dsc_var_prev_sour`: the source of previous variance in DSC. Default: `BPIC.DSC_VAR_PREV_SOUR_BSE`, others: `BPIC.DSC_VAR_PREV_SOUR_DSC`<br>
+    `@min_var`: the minimal variance.<br>
+    `@iter_num`: the maximal iteration.<br>
+    `@iter_diff_min`: the minimal difference in **DSC** to early stop.<br>
+    `@detect_sour`: the source of detection result. Default: `BPIC.DETECT_SOUR_DSC`, others: `BPIC.DETECT_SOUR_BSE`.<br>
+    ```matlab
+    % matlab
+    bpic = BPIC(sympool, "bso_mean_init", BPIC.BSO_MEAN_INIT_MMSE, "bso_var", BPIC.BSO_VAR_APPRO, "bso_var_cal", BPIC.BSO_VAR_CAL_MMSE, "dsc_ise", BPIC.DSC_ISE_MMSE, "detect_sour", BPIC.DETECT_SOUR_BSE);
+    ```
+    ```python
+    # python
+    ```
+* detect<br>
+    `@y`: the received signal, a vector
+    `@H`: the channel matrix, a matrix
+    `@No`: the noise power, a scalar
+    * **Return Value**: the estimated symbols from Tx.
 ## Samples
 Before running any sample code, please make sure you are at the root path of this repository. Also, Matlab codes require running `init` in the command window first to load directories.
 * `Test`
