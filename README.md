@@ -41,9 +41,9 @@ All Bayesian PIC-DSC detector codes are uniform in matlab and python as a class 
     # python
     ```
 * detect<br>
-    `@y`: the received signal, a vector
-    `@H`: the channel matrix, a matrix
-    `@No`: the noise power, a scalar
+    `@y`: the received signal, a vector<br>
+    `@H`: the channel matrix, a matrix<br>
+    `@No`: the noise power, a scalar<br>
     * **Return Value**: the estimated symbols from Tx.
 ## Samples
 Before running any sample code, please make sure you are at the root path of this repository. Also, Matlab codes require running `init` in the command window first to load directories.
