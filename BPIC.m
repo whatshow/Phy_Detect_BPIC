@@ -114,7 +114,7 @@ classdef BPIC < handle
                 error("The received signal must be a vector.")
             end
             if isscalar(H) 
-                error("The received signal must be a vector.")
+                error("The channel must be a matrix.")
             elseif ~ismatrix(H)
                 error("The channel must be a matrix.")
             end
@@ -136,7 +136,7 @@ classdef BPIC < handle
             HtH = Ht*H;
             HtH_off = ((eye(x_num)+1) - eye(x_num).*2).*HtH;
             HtH_off_sqr = HtH_off.^2;
-            % constant values
+            % constant values - inverse matrix
             mrc_mat = diag(1./diag(HtH));
             zf_mat = inv(HtH);
             % constant values - BSO - mean - 1st iter
