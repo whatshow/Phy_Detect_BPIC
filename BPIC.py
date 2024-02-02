@@ -1,4 +1,6 @@
 import numpy as np
+from numpy import exp
+from numpy.linalg import inv
 
 class BPIC(object):
     # constants
@@ -129,7 +131,7 @@ class BPIC(object):
         # input check
         # input check - to numpy
         y = np.asarray(y);
-        H = np.asarry(H);
+        H = np.asarray(H);
         No = np.asarray(No);
         # input check - batch_size
         if y.ndim > 1:
@@ -158,8 +160,120 @@ class BPIC(object):
         HtH_off = ((self.eye(x_num)+1) - self.eye(x_num)*2)*HtH;
         HtH_off_sqr = np.square(HtH_off);
         # constant values - inverse matrix
-        mrc_mat = diag(1./diag(HtH));
+        mrc_mat = self.diag(1/self.diag(HtH));
         zf_mat = inv(HtH);
+        # constant values - BSO - mean - 1st iter
+        bso_zigma_1 = self.eye(x_num);
+        if self.bso_mean_init == BPIC.BSO_MEAN_INIT_MMSE:
+            bso_zigma_1 = inv(HtH + No*self.eye(x_num));
+        if self.bso_mean_init == BPIC.BSO_MEAN_INIT_MRC:
+            bso_zigma_1 = mrc_mat;
+        if self.bso_mean_init == BPIC.BSO_MEAN_INIT_ZF:
+            bso_zigma_1 = zf_mat;
+        # constant values - BSO - mean - other iteration
+        bso_zigma_others = mrc_mat;
+        if self.bso_mean_cal == BPIC.BSO_MEAN_CAL_ZF:
+            bso_zigma_others = zf_mat;
+        # constant values - BSO - variance
+        bso_var_mat = 1/self.diag(HtH);
+        if self.bso_var_cal == BPIC.BSO_VAR_CAL_MMSE:
+            bso_var_mat = self.diag(inv(HtH + No*self.eye(x_num)));
+        if self.bso_var_cal == BPIC.BSO_VAR_CAL_ZF:
+            bso_var_mat = self.diag(zf_mat);
+        bso_var_mat_sqr = bso_var_mat**2;
+        # constant values - DSC
+        dsc_w = self.eye(x_num); # the default is `BPIC.DSC_ISE_NO`
+        if self.dsc_ise == BPIC.DSC_ISE_MRC:
+            dsc_w = mrc_mat;
+        if self.dsc_ise == BPIC.DSC_ISE_ZF:
+            dsc_w = zf_mat;
+        if self.dsc_ise == BPIC.DSC_ISE_MMSE:
+            dsc_w = inv(HtH + No*self.diag(self.ones(x_num, 1)));
+        
+        # iterative detection
+        x_dsc = self.zeros(x_num);
+        v_dsc = self.zeros(x_num);
+        ise_dsc_prev = self.zeros(x_num);
+        v_dsc_prev = None;
+        x_bse_prev = None;
+        v_bse_prev = None;
+        for iter_id in range(self.iter_num):
+            # BSO
+            # BSO - mean
+            if iter_id == 0:
+                x_bso = bso_zigma_1@(Hty - HtH_off@x_dsc);
+            else:
+                x_bso = bso_zigma_others@(Hty - HtH_off@x_dsc);
+                
+            # BSO - variance
+            if self.bso_var == BPIC.BSO_VAR_APPRO:
+                v_bso = No*bso_var_mat;
+            if self.bso_var == BPIC.BSO_VAR_ACCUR:
+                v_bso = No*bso_var_mat + HtH_off_sqr@v_dsc*bso_var_mat_sqr;
+            v_bso = np.clip(v_bso, self.min_var);
+            
+            # BSE
+            # BSE - Estimate P(x|y) using Gaussian distribution
+            pxyPdfExpPower = -1/v_bso*abs(self.repmat(x_bso, 1, self.constellation_len) - self.repmat(self.constellation, x_num, 1))**2;
+            pxypdfExpNormPower = pxyPdfExpPower - np.expand_dims(pxyPdfExpPower.max(axix=-1), axis=-1);   # make every row the max power is 0
+            pxyPdf = exp(pxypdfExpNormPower);
+            # BSE - Calculate the coefficient of every possible x to make the sum of all
+            pxyPdfCoeff = 1./np.sum(pxyPdf, axis=-1);
+            pxyPdfCoeff = self.repmat(pxyPdfCoeff, 1, self.constellation_len);
+            # BSE - PDF normalisation
+            pxyPdfNorm = pxyPdfCoeff*pxyPdf;
+            # BSE - calculate the mean and variance
+            x_bse = np.sum(pxyPdfNorm*self.constellation, axis=-1);
+            x_bse_mat = self.repmat(x_bse, 1, self.constellation_len);
+            v_bse = np.sum(abs(x_bse_mat - self.constellation)**2*pxyPdfNorm, axis=-1);
+            v_bse = np.clip(v_bse, self.min_var);
+            
+            # DSC
+            # DSC - error
+            ise_dsc = (dsc_w@(Hty - HtH@x_bse))**2;
+            ies_dsc_sum = ise_dsc + ise_dsc_prev;
+            ies_dsc_sum = np.clip(ies_dsc_sum, self.min_var);
+            # DSC - rho (if we use this rho, we will have a little difference)
+            rho_dsc = ise_dsc_prev/ies_dsc_sum;
+            # DSC - mean
+            if iter_id == 0:
+                x_dsc = x_bse;
+            else:
+                if self.dsc_mean_prev_sour == BPIC.DSC_MEAN_PREV_SOUR_BSE:
+                    #x_dsc = ise_dsc/ies_dsc_sum*x_bse_prev + ise_dsc_prev/ies_dsc_sum*x_bse;
+                    x_dsc = (1 - rho_dsc)*x_bse_prev + rho_dsc*x_bse;
+                if self.dsc_mean_prev_sour == BPIC.DSC_MEAN_PREV_SOUR_DSC:
+                    x_dsc = (1 - rho_dsc)*x_dsc + rho_dsc*x_bse;
+            # DSC - variance
+            if iter_id == 0:
+                v_dsc = v_bse;
+            else:
+                if self.dsc_var_prev_sour == BPIC.DSC_VAR_PREV_SOUR_BSE:
+                    #v_dsc = ise_dsc./ies_dsc_sum.*v_bse_prev + ise_dsc_prev./ies_dsc_sum.*v_bse;
+                    v_dsc = (1 - rho_dsc)*v_bse_prev + rho_dsc*v_bse;
+                if self.dsc_var_prev_sour == BPIC.DSC_VAR_PREV_SOUR_DSC:
+                    v_dsc = (1 - rho_dsc)*v_dsc + rho_dsc*v_bse;
+
+            # early stop
+            if iter_id > 0:
+                if np.sum(abs(v_dsc - v_dsc_prev)**2) <= self.iter_diff_min:
+                    break;
+            
+            # update statistics
+            # update statistics - BSE
+            if self.dsc_mean_prev_sour == BPIC.DSC_MEAN_PREV_SOUR_BSE:
+                x_bse_prev = x_bse;
+            if self.dsc_var_prev_sour == BPIC.DSC_VAR_PREV_SOUR_BSE:
+                v_bse_prev = v_bse;
+            # update statistics - DSC
+            v_dsc_prev = v_dsc;
+            # update statistics - DSC - instantaneous square error
+            ise_dsc_prev = ise_dsc;
+        # take the detection value
+        if self.detect_sour == BPIC.DETECT_SOUR_BSE:
+            return x_bse;
+        if self.detect_sour == BPIC.DETECT_SOUR_DSC:
+            return x_dsc;
         
     ##########################################################################
     # Functions uniform with non-batch and batch
@@ -169,7 +283,27 @@ class BPIC(object):
         if self.batch_size is not BPIC.BATCH_SIZE_NO:
             out = np.tile(out,(self.batch_size, 1, 1));
             return out;
-        
+    
+    '''
+    generate a matrix of all zeros
+    @order: 'C': this function only create given dimensions; 'F': create the dimensions as matlab (2D at least)
+    '''
+    def zeros(self, nrow, *args, order='C'):
+        out = None;
+        if order == 'F':
+            ncol = nrow;
+            if len(args) >= 1:
+                ncol = args[0];
+            out = np.zeros((nrow, ncol)) if self.batch_size == BPIC.BATCH_SIZE_NO else np.zeros((self.batch_size, nrow, ncol));
+        elif order == 'C':
+            zeros_shape = list(args);
+            zeros_shape.insert(0, nrow);
+            if self.batch_size != BPIC.BATCH_SIZE_NO:
+                zeros_shape.insert(0, self.batch_size);
+            out = np.zeros(zeros_shape);
+        return out;
+    
+    
     '''
     generate a matrix based on its diag or get a diagonal matrix from its vector
     '''
@@ -180,7 +314,17 @@ class BPIC(object):
             out = np.diag(diag_vec);
         else:
             # np.zeros only take real numbers by default, here we need to put complex value into it
-            out = np.zeros((batch_size, diag_vec_len, diag_vec_len), dtype=diag_vec.dtype);
-            for batch_id in range(batch_size):
-                out[batch_id, ...] = np.diag(diag_vec[batch_id, ...]);
+            out = [];
+            # create output
+            for batch_id in range(self.batch_size):
+                out[batch_id] = np.diag(diag_vec[batch_id, ...]);
+            out = np.asarray(out);
         return out;
+    
+    '''
+    repeat the matrix in the given dimension (as matlab)
+    '''
+    def repmat(self, mat, nrow, *args):
+        out = None;
+        ncol = args[0] if len(args) >= 1 else nrow;
+        out = np.tile(mat, (nrow, ncol)) if self.batch_size == BPIC.BATCH_SIZE_NO else np.tile(mat, (1, nrow, ncol));
