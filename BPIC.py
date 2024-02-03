@@ -134,7 +134,7 @@ class BPIC(object):
         H = np.asarray(H);
         No = np.asarray(No);
         # input check - batch_size
-        if y.ndim > 1:
+        if y.ndim > 1 and y.shape[]:
             if y.shape[0] != H.shape[0] or y.shape[0] != H.shape[0]:
                 raise Exception("The batch size (1st dimension) is not uniform for y, H and No.");
             else:
