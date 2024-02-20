@@ -58,6 +58,7 @@ class BPIC(object):
     iter_num = None;                # maximal iteration
     iter_diff_min = None;           # the minimal difference between 2 adjacent iterations
     detect_sour = None;
+    batch_size = None;              # the batch size
     
     '''
     init
@@ -73,8 +74,9 @@ class BPIC(object):
     @iter_num:              the maximal iteration.
     @iter_diff_min:         the minimal difference in **DSC** to early stop.
     @detect_sour:           the source of detection result. Default: `BPIC.DETECT_SOUR_DSC`, others: `BPIC.DETECT_SOUR_BSE`.
+    @batch_size:            the batch size
     '''
-    def __init__(self, constellation, *, bso_mean_init=BSO_MEAN_INIT_MMSE, bso_mean_cal=BSO_MEAN_CAL_MRC, bso_var=BSO_VAR_APPRO, bso_var_cal=BSO_VAR_CAL_MRC, dsc_ise=DSC_ISE_MRC, dsc_mean_prev_sour=DSC_MEAN_PREV_SOUR_BSE, dsc_var_prev_sour=DSC_VAR_PREV_SOUR_BSE, min_var=eps, iter_num=10, iter_diff_min=eps,detect_sour=DETECT_SOUR_DSC):
+    def __init__(self, constellation, *, bso_mean_init=BSO_MEAN_INIT_MMSE, bso_mean_cal=BSO_MEAN_CAL_MRC, bso_var=BSO_VAR_APPRO, bso_var_cal=BSO_VAR_CAL_MRC, dsc_ise=DSC_ISE_MRC, dsc_mean_prev_sour=DSC_MEAN_PREV_SOUR_BSE, dsc_var_prev_sour=DSC_VAR_PREV_SOUR_BSE, min_var=eps, iter_num=10, iter_diff_min=eps, detect_sour=DETECT_SOUR_DSC, batch_size=BATCH_SIZE_NO):
         constellation = np.asarray(constellation);
         if constellation.ndim != 1:
             raise Exception("The constellation must be a vector.");
@@ -119,7 +121,7 @@ class BPIC(object):
             raise Exception("The source of detection result is not recognised.");
         else:
             self.detect_sour = detect_sour;
-        self.batch_size = BPIC.BATCH_SIZE_NO;
+        self.batch_size = batch_size;
     
     '''
     detect
@@ -134,7 +136,7 @@ class BPIC(object):
         H = np.asarray(H);
         No = np.asarray(No);
         # input check - batch_size
-        if y.ndim > 1 and y.shape[]:
+        if y.ndim > 1 and y.shape[0]:
             if y.shape[0] != H.shape[0] or y.shape[0] != H.shape[0]:
                 raise Exception("The batch size (1st dimension) is not uniform for y, H and No.");
             else:
@@ -278,6 +280,61 @@ class BPIC(object):
     ##########################################################################
     # Functions uniform with non-batch and batch
     ##########################################################################
+    '''
+    check input is a vector like [(batch_size), n],  [(batch_size), n, 1] or [(batch_size), 1, n] 
+    '''
+    def isvector(self, mat):
+        mat = np.asarray(mat);
+        if self.batch_size is BPIC.BATCH_SIZE_NO:
+            return mat.ndim == 1 or mat.ndim == 2 and (mat.shape[-2] == 1 or mat.shape[-1] == 1);
+        else:
+            if mat.shape[0] != self.batch_size:
+                raise Exception("The input does not has the required batch size.");
+            else:
+                return mat.ndim == 2 or mat.ndim == 3 and (mat.shape[-2] == 1 or mat.shape[-1] == 1);
+    
+    '''
+    check input is a matrix like [(batch_size), n. m]
+    '''
+    def ismatrix(self, mat):
+        mat = np.asarray(mat);
+        if self.batch_size is BPIC.BATCH_SIZE_NO:
+            return mat.ndim == 2 and mat.shape[-2] > 1 and mat.shape[-1] > 1;
+        else:
+            if mat.shape[0] != self.batch_size:
+                raise Exception("The input does not has the required batch size.");
+            else:
+                return mat.ndim == 3 and mat.shape[-2] > 1 and mat.shape[-1] > 1;
+    
+    '''
+    change the input to a column vector
+    '''
+    def vec2col(self, mat):
+        out = mat.copy();
+        if not self.isvector(out):
+            raise Exception("The input is not a vector");
+        else:
+            out = np.squeeze(out);
+            if self.batch_size == 1:
+                out = np.expand_dims(out, 0);
+            out = np.expand_dims(out, -1);
+        return out;
+    
+    '''
+    change the input to a row vector
+    '''
+    def vec2col(self, mat):
+        out = mat.copy();
+        if not self.isvector(out):
+            raise Exception("The input is not a vector");
+        else:
+            out = np.squeeze(out);
+            if self.batch_size == 1:
+                out = np.expand_dims(out, 0);
+            out = np.expand_dims(out, -2);
+        return out;
+    
+    
     def eye(self, size):
         out = np.eye(size);
         if self.batch_size is not BPIC.BATCH_SIZE_NO:
