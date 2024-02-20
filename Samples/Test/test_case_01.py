@@ -33,5 +33,5 @@ y_round = np.around(y, 4);
 bpic = BPIC(sympool, bso_var_cal=BPIC.BSO_VAR_CAL_MMSE, dsc_ise=BPIC.DSC_ISE_MMSE, detect_sour=BPIC.DETECT_SOUR_BSE);
 syms_BPIC_MMSE = bpic.detect(y, H, No);
 # BPIC - ZF
-bpic = BPIC(sympool, bso_mean_init=BPIC.BSO_MEAN_INIT_ZF, bso_var_cal=BPIC.BSO_VAR_CAL_ZF, dsc_ise=BPIC.DSC_ISE_ZF, detect_sour=BPIC.DETECT_SOUR_BSE);
-syms_BPIC_ZF = bpic.detect(y, H, No);
+# bpic = BPIC(sympool, bso_mean_init=BPIC.BSO_MEAN_INIT_ZF, bso_var_cal=BPIC.BSO_VAR_CAL_ZF, dsc_ise=BPIC.DSC_ISE_ZF, detect_sour=BPIC.DETECT_SOUR_BSE);
+# syms_BPIC_ZF = bpic.detect(y, H, No);

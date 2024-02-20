@@ -81,8 +81,8 @@ class BPIC(object):
         if constellation.ndim != 1:
             raise Exception("The constellation must be a vector.");
         else:
-            self.constellation = constellation;
             self.constellation_len = len(constellation);
+            self.constellation = np.squeeze(constellation);
         # other configurations
         if bso_mean_init not in BPIC.BSO_MEAN_INIT_TYPES:
             raise Exception("1st iteration method in BSO to calculate the mean is not recognised.");
@@ -132,19 +132,17 @@ class BPIC(object):
     def detect(self, y, H, No):
         # input check
         # input check - to numpy
-        y = np.asarray(y);
+        y = self.squeeze(np.asarray(y));
         H = np.asarray(H);
-        No = np.asarray(No);
+        No = np.squeeze(np.asarray(No));
         # input check - batch_size
-        if y.ndim > 1 and y.shape[0]:
-            if y.shape[0] != H.shape[0] or y.shape[0] != H.shape[0]:
+        if self.batch_size is not BPIC.BATCH_SIZE_NO:
+            if self.batch_size != y.shape[0] or self.batch_size != H.shape[0] or self.batch_size != No.shape[0]:
                 raise Exception("The batch size (1st dimension) is not uniform for y, H and No.");
-            else:
-                self.batch_size = y.shape[0];
         # input check - dimension
-        if self.batch_size == BPIC.BATCH_SIZE_NO and y.ndim !=1 or self.batch_size != BPIC.BATCH_SIZE_NO and y.ndim !=2:
+        if not self.isvector(y):
             raise Exception("The received signal must be a vector.");
-        if self.batch_size == BPIC.BATCH_SIZE_NO and H.ndim !=2 or self.batch_size != BPIC.BATCH_SIZE_NO and H.ndim !=3:
+        if not self.ismatrix(H):
             raise Exception("The channel must be a matrix.");
         y_num = H.shape[-2];
         x_num = H.shape[-1];
@@ -152,11 +150,11 @@ class BPIC(object):
             raise Exception("The channel row number does not equal to the signal number.");
         if y_num < x_num:
             raise Exception("The channel is a correlated channel.");
-        if No.shape[-1] != 1 or self.batch_size == BPIC.BATCH_SIZE_NO and No.ndim !=1 or self.batch_size != BPIC.BATCH_SIZE_NO and No.ndim != 2:
+        if self.batch_size == BPIC.BATCH_SIZE_NO and No.ndim > 0 or self.batch_size != BPIC.BATCH_SIZE_NO and No.ndim > 1: 
             raise Exception("The noise power must be a scalar.");
             
         # constant values
-        Ht = np.moveaxis(H, -1, -2);
+        Ht = np.conj(np.moveaxis(H, -1, -2));
         Hty = Ht @ y;
         HtH = Ht @ H;
         HtH_off = ((self.eye(x_num)+1) - self.eye(x_num)*2)*HtH;
@@ -190,7 +188,7 @@ class BPIC(object):
         if self.dsc_ise == BPIC.DSC_ISE_ZF:
             dsc_w = zf_mat;
         if self.dsc_ise == BPIC.DSC_ISE_MMSE:
-            dsc_w = inv(HtH + No*self.diag(self.ones(x_num, 1)));
+            dsc_w = inv(HtH + No*self.diag(self.ones(x_num)));
         
         # iterative detection
         x_dsc = self.zeros(x_num);
@@ -212,7 +210,7 @@ class BPIC(object):
                 v_bso = No*bso_var_mat;
             if self.bso_var == BPIC.BSO_VAR_ACCUR:
                 v_bso = No*bso_var_mat + HtH_off_sqr@v_dsc*bso_var_mat_sqr;
-            v_bso = np.clip(v_bso, self.min_var);
+            v_bso = np.maximum(v_bso, self.min_var);
             
             # BSE
             # BSE - Estimate P(x|y) using Gaussian distribution
@@ -307,31 +305,13 @@ class BPIC(object):
                 return mat.ndim == 3 and mat.shape[-2] > 1 and mat.shape[-1] > 1;
     
     '''
-    change the input to a column vector
+    squeeze redundant dimension except the batch size
     '''
-    def vec2col(self, mat):
+    def squeeze(self, mat):
         out = mat.copy();
-        if not self.isvector(out):
-            raise Exception("The input is not a vector");
-        else:
-            out = np.squeeze(out);
-            if self.batch_size == 1:
-                out = np.expand_dims(out, 0);
-            out = np.expand_dims(out, -1);
-        return out;
-    
-    '''
-    change the input to a row vector
-    '''
-    def vec2col(self, mat):
-        out = mat.copy();
-        if not self.isvector(out):
-            raise Exception("The input is not a vector");
-        else:
-            out = np.squeeze(out);
-            if self.batch_size == 1:
-                out = np.expand_dims(out, 0);
-            out = np.expand_dims(out, -2);
+        out = np.squeeze(out);
+        if self.batch_size == 1:
+            out = np.expand_dims(out, 0);
         return out;
     
     
@@ -339,7 +319,7 @@ class BPIC(object):
         out = np.eye(size);
         if self.batch_size is not BPIC.BATCH_SIZE_NO:
             out = np.tile(out,(self.batch_size, 1, 1));
-            return out;
+        return out;
     
     '''
     generate a matrix of all zeros
@@ -360,6 +340,20 @@ class BPIC(object):
             out = np.zeros(zeros_shape);
         return out;
     
+    '''
+    generate a matrix full of ones
+    @shape: a tuple of shape
+    '''
+    def ones(self, shape):
+        new_shape = None;
+        if isinstance(shape, int):
+            new_shape = [shape];
+        else:
+            new_shape = list(shape);
+        if self.batch_size is not BPIC.BATCH_SIZE_NO:
+            new_shape.insert(0, self.batch_size);
+        return np.ones(new_shape);
+        
     
     '''
     generate a matrix based on its diag or get a diagonal matrix from its vector
