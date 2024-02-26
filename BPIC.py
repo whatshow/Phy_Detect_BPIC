@@ -218,7 +218,7 @@ class BPIC(object):
             # BSE - Estimate P(x|y) using Gaussian distribution
             pxyPdfExpPower = -1/v_bso*abs(self.repmat(x_bso, 1, self.constellation_len) - self.repmat(self.constellation, x_num, 1))**2;
             # BSE - make every row the max power is 0
-            #     - we only gather maximums based on real values (because the imaginary part should be zero)
+            #     - max only consider the real part
             pxypdfExpNormPower = pxyPdfExpPower - np.expand_dims(pxyPdfExpPower.max(axis=-1), axis=-1);
             pxyPdf = exp(pxypdfExpNormPower);
             # BSE - Calculate the coefficient of every possible x to make the sum of all

@@ -200,6 +200,7 @@ classdef BPIC < handle
                 % BSE
                 % BSE - Estimate P(x|y) using Gaussian distribution
                 pxyPdfExpPower = -1./v_bso.*abs(repmat(x_bso, 1, self.constellation_len) - repmat(self.constellation, x_num, 1)).^2;
+                pxyPdfExpPower = real(pxyPdfExpPower);
                 pxypdfExpNormPower = pxyPdfExpPower - max(pxyPdfExpPower, [], 2);   % make every row the max power is 0
                 pxyPdf = exp(pxypdfExpNormPower);
                 % BSE - Calculate the coefficient of every possible x to make the sum of all

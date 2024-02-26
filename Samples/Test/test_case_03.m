@@ -12,13 +12,13 @@ rx_num = 8;
 
 % detection settings
 iter_times = 10;
+iter_diff_min = 1e-14;
 
 %% simulation
 % sim - Tx
-nbits_len = tx_num*sym_bitnum;
-nbits = [1;0;1;1;1;0;1;0;0;0;0;0;0;0;0;0;1;0;1;0;1;1;0;1;0;1;1;0;1;1;0;1];
 % Create symbols
-x = qammod(nbits, M,'InputType','bit','UnitAveragePower',true);
+x = [-0.316227766016838 - 0.948683298050514j,0.948683298050514 + 0.948683298050514j,-0.948683298050514 - 0.948683298050514j,-0.948683298050514 - 0.948683298050514j,0.316227766016838 - 0.948683298050514j,0.316227766016838 + 0.948683298050514j,-0.316227766016838 + 0.316227766016838j,0.316227766016838 + 0.948683298050514j];
+x = x.';
 
 % sim - channel
 % Rayleigh fadding channel
@@ -30,6 +30,6 @@ y = H*x + noise;
 
 % sim - Rx
 % BPIC - ZF - uniform
-bpic = BPIC(sympool, "bso_mean_init", BPIC.BSO_MEAN_INIT_ZF, "bso_mean_cal", BPIC.BSO_MEAN_CAL_ZF, "bso_var", BPIC.BSO_VAR_APPRO, "bso_var_cal", BPIC.BSO_VAR_CAL_ZF, "dsc_ise", BPIC.DSC_ISE_ZF);
+bpic = BPIC(sympool, "bso_mean_init", BPIC.BSO_MEAN_INIT_ZF, "bso_mean_cal", BPIC.BSO_MEAN_CAL_ZF, "bso_var", BPIC.BSO_VAR_APPRO, "bso_var_cal", BPIC.BSO_VAR_CAL_ZF, "dsc_ise", BPIC.DSC_ISE_ZF, "iter_diff_min", iter_diff_min);
 syms_BPIC_ZF_Uniform = bpic.detect(y, H, No);
 
