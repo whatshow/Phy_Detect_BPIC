@@ -40,7 +40,7 @@ syms_BPIC_MMSE = bpic.detect(y, H, No);
 bpic = BPIC(sympool, "bso_mean_init", BPIC.BSO_MEAN_INIT_ZF, "bso_var", BPIC.BSO_VAR_APPRO, "bso_var_cal", BPIC.BSO_VAR_CAL_ZF, "dsc_ise", BPIC.DSC_ISE_ZF, "detect_sour", BPIC.DETECT_SOUR_BSE);
 syms_BPIC_ZF = bpic.detect(y, H, No);
 % BPIC - Paper
-bpic = BPIC(sympool, "bso_mean_init", BPIC.BSO_MEAN_INIT_MRC, "bso_var", BPIC.BSO_VAR_APPRO, "bso_var_cal", BPIC.BSO_VAR_CAL_MRC, "dsc_ise", BPIC.DSC_ISE_MRC, "detect_sour", BPIC.DETECT_SOUR_BSE);
+bpic = BPIC(sympool, "bso_mean_init", BPIC.BSO_MEAN_INIT_MRC, "bso_var", BPIC.BSO_VAR_APPRO, "bso_var_cal", BPIC.BSO_VAR_CAL_MRC, "dsc_ise", BPIC.DSC_ISE_MRC, "detect_sour", BPIC.DETECT_SOUR_DSC);
 syms_BPIC_paper = bpic.detect(y, H, No);
 
 fprintf("Estimated Symbol Difference(MMSE) is %.16f\n", sum(abs(syms_BPIC_MMSE - syms_BPIC_MMSE_Alva)));

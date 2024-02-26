@@ -210,29 +210,33 @@ class BPIC(object):
                 v_bso = No*bso_var_mat;
             if self.bso_var == BPIC.BSO_VAR_ACCUR:
                 v_bso = No*bso_var_mat + HtH_off_sqr@v_dsc*bso_var_mat_sqr;
-            v_bso = np.maximum(v_bso, self.min_var);
+            v_bso = self.max(v_bso, self.min_var);
             
             # BSE
+            x_bso = np.expand_dims(x_bso, -1);
+            v_bso = np.expand_dims(v_bso, -1);
             # BSE - Estimate P(x|y) using Gaussian distribution
             pxyPdfExpPower = -1/v_bso*abs(self.repmat(x_bso, 1, self.constellation_len) - self.repmat(self.constellation, x_num, 1))**2;
-            pxypdfExpNormPower = pxyPdfExpPower - np.expand_dims(pxyPdfExpPower.max(axix=-1), axis=-1);   # make every row the max power is 0
+            # BSE - make every row the max power is 0
+            #     - we only gather maximums based on real values (because the imaginary part should be zero)
+            pxypdfExpNormPower = pxyPdfExpPower - np.expand_dims(pxyPdfExpPower.max(axis=-1), axis=-1);
             pxyPdf = exp(pxypdfExpNormPower);
             # BSE - Calculate the coefficient of every possible x to make the sum of all
-            pxyPdfCoeff = 1./np.sum(pxyPdf, axis=-1);
+            pxyPdfCoeff = np.expand_dims(1./np.sum(pxyPdf, axis=-1), -1);
             pxyPdfCoeff = self.repmat(pxyPdfCoeff, 1, self.constellation_len);
             # BSE - PDF normalisation
             pxyPdfNorm = pxyPdfCoeff*pxyPdf;
             # BSE - calculate the mean and variance
             x_bse = np.sum(pxyPdfNorm*self.constellation, axis=-1);
-            x_bse_mat = self.repmat(x_bse, 1, self.constellation_len);
+            x_bse_mat = self.repmat(np.expand_dims(x_bse, -1), 1, self.constellation_len);
             v_bse = np.sum(abs(x_bse_mat - self.constellation)**2*pxyPdfNorm, axis=-1);
-            v_bse = np.clip(v_bse, self.min_var);
+            v_bse = self.max(v_bse, self.min_var);
             
             # DSC
             # DSC - error
             ise_dsc = (dsc_w@(Hty - HtH@x_bse))**2;
             ies_dsc_sum = ise_dsc + ise_dsc_prev;
-            ies_dsc_sum = np.clip(ies_dsc_sum, self.min_var);
+            ies_dsc_sum = self.max(ies_dsc_sum, self.min_var);
             # DSC - rho (if we use this rho, we will have a little difference)
             rho_dsc = ise_dsc_prev/ies_dsc_sum;
             # DSC - mean
@@ -304,6 +308,36 @@ class BPIC(object):
             else:
                 return mat.ndim == 3 and mat.shape[-2] > 1 and mat.shape[-1] > 1;
     
+    
+    '''
+    return the maximum value of a matrix or the maximu value of two matrices (for complex value, we compare the magnitude)
+    @mat: the matrix to 
+    '''
+    def max(self, mat, *args, axis=-1):
+        out = None;
+        mat = np.asarray(mat);
+        mat2 = None;
+        if len(args) > 0:
+            if isinstance(args[0], float) or isinstance(args[0], int):
+                mat2 = args[0];
+            elif args[0].ndim == 0 or mat.shape == args[0].shape:
+                mat2 = args[0].astype(mat.dtype);
+            else:
+                raise Exception("The input two matrices must have the same shape.");
+        # non-complex value
+        if mat.dtype != np.csingle and mat.dtype != np.complex_:
+            if len(args) == 0:
+                out = mat.max(axis=axis);
+            else:
+                out = np.where(mat>mat2, mat, mat2);
+        # complex value
+        else:
+            if len(args) == 0:
+                out = np.take_along_axis(mat, abs(mat).argmax(axis=axis, keepdims=True), axis);
+            else:
+                out = np.where(abs(mat)>abs(mat2), mat, mat2);
+        return out;
+    
     '''
     squeeze redundant dimension except the batch size
     '''
@@ -314,7 +348,10 @@ class BPIC(object):
             out = np.expand_dims(out, 0);
         return out;
     
-    
+    '''
+    return an identity matrix
+    @size: a tuple of the shape
+    '''
     def eye(self, size):
         out = np.eye(size);
         if self.batch_size is not BPIC.BATCH_SIZE_NO:
@@ -379,3 +416,4 @@ class BPIC(object):
         out = None;
         ncol = args[0] if len(args) >= 1 else nrow;
         out = np.tile(mat, (nrow, ncol)) if self.batch_size == BPIC.BATCH_SIZE_NO else np.tile(mat, (1, nrow, ncol));
+        return out;

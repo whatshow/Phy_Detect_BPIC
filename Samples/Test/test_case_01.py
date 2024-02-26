@@ -29,9 +29,22 @@ y = H@x + noise;
 y_round = np.around(y, 4);
 
 
+# sim - Rx
 # BPIC - MMSE
 bpic = BPIC(sympool, bso_var_cal=BPIC.BSO_VAR_CAL_MMSE, dsc_ise=BPIC.DSC_ISE_MMSE, detect_sour=BPIC.DETECT_SOUR_BSE);
 syms_BPIC_MMSE = bpic.detect(y, H, No);
+syms_BPIC_MMSE_mat = np.asarray([[-0.942655192229299 + 0.906258788176649j],[0.913885830049333 - 0.345609884043461j],[-0.312669600541753 - 0.315145911885506j],[0.636944663543423 - 0.471641689278999j],[-0.744111924324306 - 0.946999468925245j],[-0.306303586092814 + 0.320004589570229j]]).squeeze();
+syms_BPIC_MMSE_diff = abs(syms_BPIC_MMSE - syms_BPIC_MMSE_mat);
+print("Estimated Symbol Difference(MMSE) is %.16f\n"%np.sum(syms_BPIC_MMSE_diff, axis=None));
 # BPIC - ZF
-# bpic = BPIC(sympool, bso_mean_init=BPIC.BSO_MEAN_INIT_ZF, bso_var_cal=BPIC.BSO_VAR_CAL_ZF, dsc_ise=BPIC.DSC_ISE_ZF, detect_sour=BPIC.DETECT_SOUR_BSE);
-# syms_BPIC_ZF = bpic.detect(y, H, No);
+bpic = BPIC(sympool, bso_mean_init=BPIC.BSO_MEAN_INIT_ZF, bso_var_cal=BPIC.BSO_VAR_CAL_ZF, dsc_ise=BPIC.DSC_ISE_ZF, detect_sour=BPIC.DETECT_SOUR_BSE);
+syms_BPIC_ZF = bpic.detect(y, H, No);
+syms_BPIC_ZF_mat = np.asarray([-0.935709395639131 + 0.879639856935171j,0.850857071687981 - 0.330536555057228j,-0.310385312313961 - 0.315863772625038j,0.567789586082388 - 0.442923798713942j,-0.705951679320632 - 0.942039593705748j,-0.256949693240693 + 0.322536847373467j]);
+syms_BPIC_ZF_diff = abs(syms_BPIC_ZF - syms_BPIC_ZF_mat);
+print("Estimated Symbol Difference(ZF) is %.16f\n"%np.sum(syms_BPIC_ZF_diff,axis=None));
+# BPIC - paper
+bpic = BPIC(sympool, bso_mean_init=BPIC.BSO_MEAN_INIT_MRC, detect_sour=BPIC.DETECT_SOUR_DSC);
+syms_BPIC_paper = bpic.detect(y, H, No);
+syms_BPIC_paper_mat = np.asarray([-0.948234773816038 + 0.932210308967670j,0.934730756110627 - 0.349358398991327j,-0.316220470823238 - 0.316227029308117j,0.731220202692565 - 0.410468656996030j,-0.806103016513735 - 0.948108671216813j,-0.322442602812792 + 0.314793754609392j]);
+syms_BPIC_paper_diff = abs(syms_BPIC_paper - syms_BPIC_paper_mat);
+print("Estimated Symbol Difference(paper) is %.16f\n"%np.sum(syms_BPIC_paper_diff,axis=None));
