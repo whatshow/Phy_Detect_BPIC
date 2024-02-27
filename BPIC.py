@@ -211,6 +211,8 @@ class BPIC(object):
             if self.bso_var == BPIC.BSO_VAR_ACCUR:
                 v_bso = No*bso_var_mat + HtH_off_sqr@v_dsc*bso_var_mat_sqr;
             v_bso = self.max(v_bso, self.min_var);
+            v_bso = np.real(v_bso);
+            
             
             # BSE
             x_bso = np.expand_dims(x_bso, -1);
@@ -219,7 +221,8 @@ class BPIC(object):
             pxyPdfExpPower = -1/v_bso*abs(self.repmat(x_bso, 1, self.constellation_len) - self.repmat(self.constellation, x_num, 1))**2;
             # BSE - make every row the max power is 0
             #     - max only consider the real part
-            pxypdfExpNormPower = pxyPdfExpPower - np.expand_dims(pxyPdfExpPower.max(axis=-1), axis=-1);
+            #pxypdfExpNormPower = pxyPdfExpPower - np.expand_dims(pxyPdfExpPower.max(axis=-1), axis=-1);
+            pxypdfExpNormPower = pxyPdfExpPower - np.expand_dims(self.max(pxyPdfExpPower, axis=-1), axis=-1);
             pxyPdf = exp(pxypdfExpNormPower);
             # BSE - Calculate the coefficient of every possible x to make the sum of all
             pxyPdfCoeff = np.expand_dims(1./np.sum(pxyPdf, axis=-1), -1);
@@ -333,7 +336,7 @@ class BPIC(object):
         # complex value
         else:
             if len(args) == 0:
-                out = np.take_along_axis(mat, abs(mat).argmax(axis=axis, keepdims=True), axis);
+                out = np.take_along_axis(mat, abs(mat).argmax(axis=axis, keepdims=True), axis).squeeze(axis);
             else:
                 out = np.where(abs(mat)>abs(mat2), mat, mat2);
         return out;
@@ -397,7 +400,7 @@ class BPIC(object):
     '''
     def diag(self, diag_vec):
         out = None;
-        diag_vec_len = diag_vec.shape[-1];
+        # diag_vec_len = diag_vec.shape[-1];
         if self.batch_size is BPIC.BATCH_SIZE_NO:
             out = np.diag(diag_vec);
         else:
