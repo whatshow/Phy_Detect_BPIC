@@ -55,9 +55,19 @@ classdef BPIC < handle
     end
     methods
         % init
-        % @constellation:       the constellation
-        % @MMSE:                whether use MMSE or not
-        % @min_var
+        % @constellation:         the constellation, a vector.
+        % @bso_mean_init:         1st iteration method in **BSO** to calculate the mean. Default: `BPIC.BSO_INIT_MMSE`, others: `BPIC.BSO_INIT_MRC, BPIC.BSO_INIT_ZF` (`BPIC.BSO_INIT_NO` should not be used but you can try)
+        % @bso_mean_cal:          other iteration method in **BSO** to calculate the mean. Default: `BPIC.BSO_MEAN_CAL_MRC` (`BPIC.BSO_MEAN_CAL_ZF` should not be used but you can try)
+        % @bso_var:               use approximate or accurate variance in **BSO**. Default: `BPIC.BSO_VAR_APPRO`, others: `BPIC.BSO_VAR_ACCUR`
+        % @bso_var_cal:           the method in **BSO** to calculate the variance. Default: `BPIC.BSO_VAR_CAL_MRC`, others: `BPIC.BSO_VAR_CAL_MRC` (`BSO_VAR_CAL_ZF` should not be used but you can try)
+        % @dsc_ise:               how to calculate the instantaneous square error. Default: `BPIC.DSC_ISE_MRC`, others: `BPIC.DSC_ISE_NO, BPIC.DSC_ISE_ZF, BPIC.DSC_ISE_MMSE`
+        % @dsc_mean_prev_sour:    the source of previous mean in DSC. Default: `BPIC.DSC_MEAN_PREV_SOUR_BSE`, others: `BPIC.DSC_MEAN_PREV_SOUR_DSC`
+        % @dsc_var_prev_sour:     the source of previous variance in DSC. Default: `BPIC.DSC_VAR_PREV_SOUR_BSE`, others: `BPIC.DSC_VAR_PREV_SOUR_DSC`
+        % @min_var:               the minimal variance.
+        % @iter_num:              the maximal iteration.
+        % @iter_diff_min:         the minimal difference in **DSC** to early stop.
+        % @detect_sour:           the source of detection result. Default: `BPIC.DETECT_SOUR_DSC`, others: `BPIC.DETECT_SOUR_BSE`.
+        % @batch_size:            the batch size
         function self = BPIC(constellation, varargin)
             % register optional inputs 
             inPar = inputParser;
@@ -103,10 +113,19 @@ classdef BPIC < handle
         end
         
         % detect
-        % @y:       the received signal
-        % @H:       the channel matrix
-        % @No:      the noise (linear) power
-        function x = detect(self, y, H, No)           
+        % @y:           the received signal
+        % @H:           the channel matrix
+        % @No:          the noise (linear) power
+        % @sym_map:     false by default. If true, the output will be mapped to the constellation
+        function x = detect(self, y, H, No, varargin)
+            % register optional inputs 
+            inPar = inputParser;
+            addParameter(inPar,"sym_map", false, @(x) isscalar(x)&islogical(x));
+            inPar.KeepUnmatched = true;
+            inPar.CaseSensitive = false;
+            parse(inPar, varargin{:});
+            sym_map = inPar.Results.sym_map;
+            
             % input check
             if isscalar(y) 
                 error("The received signal must be a vector.")
@@ -270,7 +289,23 @@ classdef BPIC < handle
             if self.detect_sour == BPIC.DETECT_SOUR_DSC
                 x = x_dsc;
             end
-            
+            % hard estimation
+            if sym_map
+                x = self.symmap(x);
+            end
         end
+        
+        % symbol mapping (hard)
+        function syms_mapped = symmap(self, syms)
+            if ~isvector(syms)
+                error("Symbols must be into a vector form to map.");
+            end
+            % the input must be a column vector
+            syms = syms(:);
+            syms_dis = abs(syms - self.constellation).^2;
+            [~,syms_dis_min_idx] =  min(syms_dis,[],2);
+            syms_mapped = self.constellation(syms_dis_min_idx);
+        end
+        
     end
 end

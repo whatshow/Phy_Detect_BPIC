@@ -40,7 +40,7 @@ class BPIC(object):
     DETECT_SOUR_DSC = 2;
     DETECT_SOURS = [DETECT_SOUR_BSE, DETECT_SOUR_DSC];
     # minimal value
-    eps = 2.220446049250313e-16;
+    eps = np.finfo(float).eps;
     # Batch size
     BATCH_SIZE_NO = None;
     
@@ -125,11 +125,12 @@ class BPIC(object):
     
     '''
     detect
-    @y:       the received signal, [(batch_size), y]
-    @H:       the channel matrix, [(batch_size), y_num, x_num]
-    @No:      the noise (linear) power, [(batch_size), 1]
+    @y:         the received signal, [(batch_size), y]
+    @H:         the channel matrix, [(batch_size), y_num, x_num]
+    @No:        the noise (linear) power, [(batch_size), 1]
+    @sym_map:   false by default. If true, the output will be mapped to the constellation
     '''
-    def detect(self, y, H, No):
+    def detect(self, y, H, No, *, sym_map = False):
         # input check
         # input check - to numpy
         y = self.squeeze(np.asarray(y));
@@ -219,8 +220,8 @@ class BPIC(object):
             pxyPdfExpPower = -1/v_bso*abs(self.repmat(x_bso, 1, self.constellation_len) - self.repmat(self.constellation, x_num, 1))**2;
             # BSE - make every row the max power is 0
             #     - max only consider the real part
-            #pxypdfExpNormPower = pxyPdfExpPower - np.expand_dims(pxyPdfExpPower.max(axis=-1), axis=-1);
-            pxypdfExpNormPower = pxyPdfExpPower - np.expand_dims(self.max(pxyPdfExpPower, axis=-1), axis=-1);
+            pxypdfExpNormPower = pxyPdfExpPower - np.expand_dims(pxyPdfExpPower.max(axis=-1), axis=-1);
+            #pxypdfExpNormPower = pxyPdfExpPower - np.expand_dims(self.max(pxyPdfExpPower, axis=-1), axis=-1);
             pxyPdf = exp(pxypdfExpNormPower);
             # BSE - Calculate the coefficient of every possible x to make the sum of all
             pxyPdfCoeff = np.expand_dims(1./np.sum(pxyPdf, axis=-1), -1);
@@ -275,11 +276,31 @@ class BPIC(object):
             # update statistics - DSC - instantaneous square error
             ise_dsc_prev = ise_dsc;
         # take the detection value
+        out = None;
         if self.detect_sour == BPIC.DETECT_SOUR_BSE:
-            return x_bse;
+            out = x_bse;
         if self.detect_sour == BPIC.DETECT_SOUR_DSC:
-            return x_dsc;
+            out = x_dsc;
+        # hard estimation
+        if sym_map:
+            out = self.symmap(out);
+        return out;
+    
+    '''
+    symbol mapping (hard)
+    '''
+    def symmap(self, syms):
+        syms = np.asarray(syms);
+        if not self.isvector(syms):
+            raise Exception("Symbols must be into a vector form to map.");
+        syms_len = syms.shape[-1];
+        syms_mat = self.repmat(np.expand_dims(syms, -1), 1, self.constellation_len);
+        constel_mat = self.repmat(self.constellation, syms_len, 1);
+        syms_dis = abs(syms_mat - constel_mat)**2;
+        syms_dis_min_idx = syms_dis.argmin(axis=-1);
         
+        return np.take(self.constellation, syms_dis_min_idx);
+    
     ##########################################################################
     # Functions uniform with non-batch and batch
     ##########################################################################
@@ -418,3 +439,5 @@ class BPIC(object):
         ncol = args[0] if len(args) >= 1 else nrow;
         out = np.tile(mat, (nrow, ncol)) if self.batch_size == BPIC.BATCH_SIZE_NO else np.tile(mat, (1, nrow, ncol));
         return out;
+    
+    
