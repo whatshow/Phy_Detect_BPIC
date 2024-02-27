@@ -58,7 +58,7 @@ class BPIC(object):
     iter_num = None;                # maximal iteration
     iter_diff_min = None;           # the minimal difference between 2 adjacent iterations
     detect_sour = None;
-    batch_size = None;              # the batch size
+    batch_size = BATCH_SIZE_NO;     # the batch size
     
     '''
     init
@@ -76,7 +76,7 @@ class BPIC(object):
     @detect_sour:           the source of detection result. Default: `BPIC.DETECT_SOUR_DSC`, others: `BPIC.DETECT_SOUR_BSE`.
     @batch_size:            the batch size
     '''
-    def __init__(self, constellation, *, bso_mean_init=BSO_MEAN_INIT_MMSE, bso_mean_cal=BSO_MEAN_CAL_MRC, bso_var=BSO_VAR_APPRO, bso_var_cal=BSO_VAR_CAL_MRC, dsc_ise=DSC_ISE_MRC, dsc_mean_prev_sour=DSC_MEAN_PREV_SOUR_BSE, dsc_var_prev_sour=DSC_VAR_PREV_SOUR_BSE, min_var=eps, iter_num=10, iter_diff_min=eps, detect_sour=DETECT_SOUR_DSC, batch_size=BATCH_SIZE_NO):
+    def __init__(self, constellation, *, bso_mean_init=BSO_MEAN_INIT_MMSE, bso_mean_cal=BSO_MEAN_CAL_MRC, bso_var=BSO_VAR_APPRO, bso_var_cal=BSO_VAR_CAL_MRC, dsc_ise=DSC_ISE_MRC, dsc_mean_prev_sour=DSC_MEAN_PREV_SOUR_BSE, dsc_var_prev_sour=DSC_VAR_PREV_SOUR_BSE, min_var=eps, iter_num=10, iter_diff_min=eps, detect_sour=DETECT_SOUR_DSC, batch_size=None):
         constellation = np.asarray(constellation);
         if constellation.ndim != 1:
             raise Exception("The constellation must be a vector.");
@@ -121,7 +121,8 @@ class BPIC(object):
             raise Exception("The source of detection result is not recognised.");
         else:
             self.detect_sour = detect_sour;
-        self.batch_size = batch_size;
+        if batch_size is not None:
+            self.batch_size = batch_size;
     
     '''
     detect
@@ -138,6 +139,8 @@ class BPIC(object):
         No = np.squeeze(np.asarray(No));
         # input check - batch_size
         if self.batch_size is not BPIC.BATCH_SIZE_NO:
+            if No.ndim == 0:
+                No = np.tile(No, self.batch_size);
             if self.batch_size != y.shape[0] or self.batch_size != H.shape[0] or self.batch_size != No.shape[0]:
                 raise Exception("The batch size (1st dimension) is not uniform for y, H and No.");
         # input check - dimension
