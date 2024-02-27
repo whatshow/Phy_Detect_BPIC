@@ -211,8 +211,6 @@ class BPIC(object):
             if self.bso_var == BPIC.BSO_VAR_ACCUR:
                 v_bso = No*bso_var_mat + HtH_off_sqr@v_dsc*bso_var_mat_sqr;
             v_bso = self.max(v_bso, self.min_var);
-            v_bso = np.real(v_bso);
-            
             
             # BSE
             x_bso = np.expand_dims(x_bso, -1);
