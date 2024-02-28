@@ -13,15 +13,55 @@ __MACOSX
 ##########################################################################################################################
 # Development & Distribution Folders
 ##########################################################################################################################
+# data
+[Dd][Aa][Tt][Aa]/
+_[Dd][Aa][Tt][Aa]/
+_[Dd][Aa][Tt][Aa]_/
+__[Dd][Aa][Tt][Aa]/
+__[Dd][Aa][Tt][Aa]__/
+# build
+[Bb][Uu][Ii][Ll][Dd]/
+_[Bb][Uu][Ii][Ll][Dd]/
+_[Bb][Uu][Ii][Ll][Dd]_/
+__[Bb][Uu][Ii][Ll][Dd]/
+__[Bb][Uu][Ii][Ll][Dd]__/
+# target
+[Tt][Aa][Rr][Gg][Ee][Tt]/
+_[Tt][Aa][Rr][Gg][Ee][Tt]/
+_[Tt][Aa][Rr][Gg][Ee][Tt]_/
+__[Tt][Aa][Rr][Gg][Ee][Tt]/
+__[Tt][Aa][Rr][Gg][Ee][Tt]__/
+# tmp
+[Tt][Mm][Pp]/
+_[Tt][Mm][Pp]/
+_[Tt][Mm][Pp]_/
+__[Tt][Mm][Pp]/
+__[Tt][Mm][Pp]__/
+# out-tsc
+[Oo][Uu][Tt]-[Tt][Ss][Cc]/
 # dist
-/[Dd][Ii][Ss][Tt]/
+[Dd][Ii][Ss][Tt]/
+_[Dd][Ii][Ss][Tt]/
+_[Dd][Ii][Ss][Tt]_/
+__[Dd][Ii][Ss][Tt]/
+__[Dd][Ii][Ss][Tt]__/
 # dev
-/[Dd][Ee][Vv]/*
-/__[Dd][Ee][Vv]__/*
-!/__[Dd][Ee][Vv]__/[Mm][Oo][Dd][Ee][Ll][Ss]/
-!/[Dd][Ee][Vv]/[Mm][Oo][Dd][Ee][Ll][Ss]/
-/__[Rr][Ee][Ss][Uu][Ll][Tt][Ss]__/
-/[Rr][Ee][Ss][Uu][Ll][Tt][Ss]/
+[Dd][Ee][Vv]/*
+_[Dd][Ee][Vv]/*
+_[Dd][Ee][Vv]_/*
+__[Dd][Ee][Vv]/*
+__[Dd][Ee][Vv]__/*
+![Dd][Ee][Vv]/[Mm][Oo][Dd][Ee][Ll][Ss]/
+!_[Dd][Ee][Vv]/[Mm][Oo][Dd][Ee][Ll][Ss]/
+!_[Dd][Ee][Vv]_/[Mm][Oo][Dd][Ee][Ll][Ss]/
+!__[Dd][Ee][Vv]/[Mm][Oo][Dd][Ee][Ll][Ss]/
+!__[Dd][Ee][Vv]__/[Mm][Oo][Dd][Ee][Ll][Ss]/
+# results
+[Rr][Ee][Ss][Uu][Ll][Tt][Ss]/
+_[Rr][Ee][Ss][Uu][Ll][Tt][Ss]/
+_[Rr][Ee][Ss][Uu][Ll][Tt][Ss]_/
+__[Rr][Ee][Ss][Uu][Ll][Tt][Ss]/
+__[Rr][Ee][Ss][Uu][Ll][Tt][Ss]__/
 ##########################################################################################################################
 
 
