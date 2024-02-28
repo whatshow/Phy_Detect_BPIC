@@ -4,7 +4,7 @@ sys.path.append("..");
 from BPIC import BPIC
 
 # batch_size
-batch_size = 1;
+batch_size = 12;
 
 # symbols & channel
 SNR_dB = 10;

@@ -192,7 +192,7 @@ classdef BPIC < handle
                 dsc_w = zf_mat;
             end
             if self.dsc_ise == BPIC.DSC_ISE_MMSE
-                dsc_w = inv(HtH + No*diag(ones(x_num, 1)));
+                dsc_w = inv(HtH + No*eye(x_num));
             end
             
             % iterative detection

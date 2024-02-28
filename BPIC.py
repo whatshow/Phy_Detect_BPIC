@@ -155,8 +155,15 @@ class BPIC(object):
         if y_num < x_num:
             raise Exception("The channel is a correlated channel.");
         if self.batch_size == BPIC.BATCH_SIZE_NO and No.ndim > 0 or self.batch_size != BPIC.BATCH_SIZE_NO and No.ndim > 1: 
-            raise Exception("The noise power must be a scalar.");
-            
+            raise Exception("The noise power must be a scalar or a vector when using batch.");
+        
+        # reshape the input into correct shape
+        # y
+        y = np.expand_dims(y, -1);
+        # No
+        if self.batch_size is not BPIC.BATCH_SIZE_NO:
+            No = np.expand_dims(No, (-1,-2));
+        
         # constant values
         Ht = np.conj(np.moveaxis(H, -1, -2));
         Hty = Ht @ y;
@@ -179,11 +186,11 @@ class BPIC(object):
         if self.bso_mean_cal == BPIC.BSO_MEAN_CAL_ZF:
             bso_zigma_others = zf_mat;
         # constant values - BSO - variance
-        bso_var_mat = 1/self.diag(HtH);
+        bso_var_mat = np.expand_dims(1/self.diag(HtH), -1);
         if self.bso_var_cal == BPIC.BSO_VAR_CAL_MMSE:
-            bso_var_mat = self.diag(inv(HtH + No*self.eye(x_num)));
+            bso_var_mat = np.expand_dims(self.diag(inv(HtH + No*self.eye(x_num))), -1);
         if self.bso_var_cal == BPIC.BSO_VAR_CAL_ZF:
-            bso_var_mat = self.diag(zf_mat);
+            bso_var_mat = np.expand_dims(self.diag(zf_mat), -1);
         bso_var_mat_sqr = bso_var_mat**2;
         # constant values - DSC
         dsc_w = self.eye(x_num); # the default is `BPIC.DSC_ISE_NO`
@@ -192,12 +199,12 @@ class BPIC(object):
         if self.dsc_ise == BPIC.DSC_ISE_ZF:
             dsc_w = zf_mat;
         if self.dsc_ise == BPIC.DSC_ISE_MMSE:
-            dsc_w = inv(HtH + No*self.diag(self.ones(x_num)));
+            dsc_w = inv(HtH + No*self.eye(x_num));
         
         # iterative detection
-        x_dsc = self.zeros(x_num);
-        v_dsc = self.zeros(x_num);
-        ise_dsc_prev = self.zeros(x_num);
+        x_dsc = self.zeros(x_num, 1);
+        v_dsc = self.zeros(x_num, 1);
+        ise_dsc_prev = self.zeros(x_num, 1);
         v_dsc_prev = None;
         x_bse_prev = None;
         v_bse_prev = None;
@@ -216,9 +223,6 @@ class BPIC(object):
                 v_bso = No*bso_var_mat + HtH_off_sqr@v_dsc*bso_var_mat_sqr;
             v_bso = self.max(v_bso, self.min_var);
             
-            # BSE
-            x_bso = np.expand_dims(x_bso, -1);
-            v_bso = np.expand_dims(v_bso, -1);
             # BSE - Estimate P(x|y) using Gaussian distribution
             pxyPdfExpPower = -1/v_bso*abs(self.repmat(x_bso, 1, self.constellation_len) - self.repmat(self.constellation, x_num, 1))**2;
             # BSE - make every row the max power is 0
@@ -232,9 +236,9 @@ class BPIC(object):
             # BSE - PDF normalisation
             pxyPdfNorm = pxyPdfCoeff*pxyPdf;
             # BSE - calculate the mean and variance
-            x_bse = np.sum(pxyPdfNorm*self.constellation, axis=-1);
-            x_bse_mat = self.repmat(np.expand_dims(x_bse, -1), 1, self.constellation_len);
-            v_bse = np.sum(abs(x_bse_mat - self.constellation)**2*pxyPdfNorm, axis=-1);
+            x_bse = np.expand_dims(np.sum(pxyPdfNorm*self.constellation, axis=-1), -1);
+            x_bse_mat = self.repmat(x_bse, 1, self.constellation_len);
+            v_bse = np.expand_dims(np.sum(abs(x_bse_mat - self.constellation)**2*pxyPdfNorm, axis=-1), -1);
             v_bse = self.max(v_bse, self.min_var);
             
             # DSC
@@ -284,6 +288,7 @@ class BPIC(object):
             out = x_bse;
         if self.detect_sour == BPIC.DETECT_SOUR_DSC:
             out = x_dsc;
+        out = out.squeeze(-1);
         # hard estimation
         if sym_map:
             out = self.symmap(out);
@@ -430,7 +435,7 @@ class BPIC(object):
             out = [];
             # create output
             for batch_id in range(self.batch_size):
-                out[batch_id] = np.diag(diag_vec[batch_id, ...]);
+                out.append(np.diag(diag_vec[batch_id, ...]));
             out = np.asarray(out);
         return out;
     
