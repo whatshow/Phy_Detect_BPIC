@@ -2,6 +2,10 @@ close all;
 clear;
 clc;
 
+%% load data
+path_file = "Samples/Test/Data/test_mimo.mat";
+load(path_file);
+
 %% Param Config - Model
 SNR_range = 4:3:19;                                        % SNR range
 SERs = zeros(1, length(SNR_range));                         % SERs for every SNR
@@ -32,17 +36,9 @@ for idx = 1:length(SNR_range)
     SER_TMP2 = zeros(1, nFrames(idx));
     % Try several times to do average on all BERs to avoid fluctuation
     parfor try_times = 1:nFrames(idx)
-        % nbits
-        nbits_len = tx_num*sym_bitnum;
-        nbits = randi([0 1], nbits_len, 1);
-        % Create symbols
-        x = qammod(nbits, M,'InputType','bit','UnitAveragePower',true);
-        % Channel 
-        H = (randn(rx_num, tx_num) + 1j*randn(rx_num, tx_num))/sqrt(2*tx_num) ;
-        % Noise
-        noise = sqrt(noiseLevel/2) * (randn(rx_num,1) + 1j*randn(rx_num,1)) ;
-        % Through AWGN channel to get y 
-        y = H*x + noise;
+        y = y_all(:, :, idx, try_times);
+        H = H_all(:, :, idx, try_times);
+        x = x_all(:, :, idx, try_times);
         
         % B-PIC-DSC MMSE
         [syms] = Detect_B_PIC_DSC_MMSE(sympool, y, H, noiseLevel, iter_times);
@@ -56,15 +52,19 @@ for idx = 1:length(SNR_range)
         nbits_pred = qamdemod(syms, M,'OutputType','bit','UnitAveragePower',true);
         % To symbols
         x_est = qammod(nbits_pred, M,'InputType','bit','UnitAveragePower',true);
-        SER_TMP(1, try_times) = sum(x_est - x > eps)/tx_num;
-        SER_TMP2(1, try_times) = sum(syms_BPIC_MMSE - x > eps)/tx_num;        
+        SER_TMP(1, try_times) = sum(abs(x_est - x) > eps)/tx_num;
+        SER_TMP2(1, try_times) = sum(abs(syms_BPIC_MMSE - x) > eps)/tx_num;        
     end
     % do SER average
     SERs(idx) = mean(SER_TMP);
     SERs2(idx) = mean(SER_TMP2);
 end
 
-% plot
+%% save
+save(path_file, "SERs", "SERs2", "-append");
+save(path_file, "sympool", "-append");
+
+%% plot
 semilogy(SNR_range, SERs, '--r','LineWidth',2, 'MarkerSize', 12);
 hold on
 semilogy(SNR_range, SERs2, '--sb', 'LineWidth',1, 'MarkerSize', 12);
