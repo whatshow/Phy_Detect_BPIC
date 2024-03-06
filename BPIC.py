@@ -224,7 +224,7 @@ class BPIC(object):
             v_bso = self.max(v_bso, self.min_var);
             
             # BSE - Estimate P(x|y) using Gaussian distribution
-            pxyPdfExpPower = -1/v_bso*abs(self.repmat(x_bso, 1, self.constellation_len) - self.repmat(self.constellation, x_num, 1))**2;
+            pxyPdfExpPower = -1/(2*v_bso)*abs(self.repmat(x_bso, 1, self.constellation_len) - self.repmat(self.constellation, x_num, 1))**2;
             # BSE - make every row the max power is 0
             #     - max only consider the real part
             pxypdfExpNormPower = pxyPdfExpPower - np.expand_dims(pxyPdfExpPower.max(axis=-1), axis=-1);

@@ -3,8 +3,11 @@ clear;
 clc;
 
 %% delete data
-path_folder = "Samples/Test/Data/";
+path_folder = "_dist/Samples/Test/";
 path_file = path_folder + "test_mimo.mat";
+if ~exist(path_folder, 'dir')
+    mkdir(path_folder);
+end
 if exist(path_file, 'file')
     delete(path_file)
 end
@@ -60,9 +63,6 @@ for idx = 1:length(SNR_range)
 end
 
 %% store data into the file
-if ~exist(path_folder, 'dir')
-    mkdir(path_folder);
-end
 save(path_file, "x_all", "H_all", "y_all", "No_all");
 
 fprintf("\nData is generated!\n");

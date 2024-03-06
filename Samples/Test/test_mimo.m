@@ -3,7 +3,7 @@ clear;
 clc;
 
 %% load data
-path_file = "Samples/Test/Data/test_mimo.mat";
+path_file = "_dist/Samples/Test/test_mimo.mat";
 load(path_file);
 
 %% Param Config - Model

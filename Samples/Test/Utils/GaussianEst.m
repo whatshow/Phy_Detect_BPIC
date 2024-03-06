@@ -67,7 +67,7 @@ function [pxyMean, pxyVar] = GaussianEst(y, noisePower, xPool, varargin)
     % Estimate P(x|y) using Gaussian distribution
     y = repmat(y, 1, xPoolSize);
     xPool = repmat(xPool, ySize, 1);
-    pxyPdfExpPower = -1./noisePower.*abs(y - xPool).^2;
+    pxyPdfExpPower = -1./(2*noisePower).*abs(y - xPool).^2;
     pxypdfExpNormPower = pxyPdfExpPower - max(pxyPdfExpPower, [], 2);   % make every row the max power is 0
     pxyPdf = exp(pxypdfExpNormPower);
     % Calculate the coefficient of every possible x to make the sum of all

@@ -1,11 +1,17 @@
 import numpy as np
 import scipy.io
+import os
 import sys
 sys.path.append("..");
 from BPIC import BPIC
 
+project_name = "phy_detect_bpic";
+path_folder = os.path.abspath(os.path.dirname(__file__)).lower();
+path_folder = path_folder[:path_folder.find(project_name)+len(project_name)];
+path_file = os.path.normpath(path_folder+"/_dist/Samples/Test/test_mimo.mat")
+
 # load matlab data
-matlab_data = scipy.io.loadmat('Data/test_mimo.mat');
+matlab_data = scipy.io.loadmat(path_file);
 y_all = matlab_data["y_all"];
 H_all = matlab_data["H_all"];
 x_all = matlab_data["x_all"];
