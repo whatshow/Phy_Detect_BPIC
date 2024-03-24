@@ -172,7 +172,6 @@ class BPIC(object):
         HtH_off_sqr = np.square(HtH_off);
         # constant values - inverse matrix
         mrc_mat = self.diag(1/self.diag(HtH));
-        zf_mat = inv(HtH);
         # constant values - BSO - mean - 1st iter
         bso_zigma_1 = self.eye(x_num);
         if self.bso_mean_init == BPIC.BSO_MEAN_INIT_MMSE:
@@ -180,24 +179,24 @@ class BPIC(object):
         if self.bso_mean_init == BPIC.BSO_MEAN_INIT_MRC:
             bso_zigma_1 = mrc_mat;
         if self.bso_mean_init == BPIC.BSO_MEAN_INIT_ZF:
-            bso_zigma_1 = zf_mat;
+            bso_zigma_1 = inv(HtH);
         # constant values - BSO - mean - other iteration
         bso_zigma_others = mrc_mat;
         if self.bso_mean_cal == BPIC.BSO_MEAN_CAL_ZF:
-            bso_zigma_others = zf_mat;
+            bso_zigma_others = inv(HtH);
         # constant values - BSO - variance
         bso_var_mat = np.expand_dims(1/self.diag(HtH), -1);
         if self.bso_var_cal == BPIC.BSO_VAR_CAL_MMSE:
             bso_var_mat = np.expand_dims(self.diag(inv(HtH + No*self.eye(x_num))), -1);
         if self.bso_var_cal == BPIC.BSO_VAR_CAL_ZF:
-            bso_var_mat = np.expand_dims(self.diag(zf_mat), -1);
+            bso_var_mat = np.expand_dims(self.diag(inv(HtH)), -1);
         bso_var_mat_sqr = bso_var_mat**2;
         # constant values - DSC
         dsc_w = self.eye(x_num); # the default is `BPIC.DSC_ISE_NO`
         if self.dsc_ise == BPIC.DSC_ISE_MRC:
             dsc_w = mrc_mat;
         if self.dsc_ise == BPIC.DSC_ISE_ZF:
-            dsc_w = zf_mat;
+            dsc_w = inv(HtH);
         if self.dsc_ise == BPIC.DSC_ISE_MMSE:
             dsc_w = inv(HtH + No*self.eye(x_num));
         

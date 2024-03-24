@@ -157,7 +157,6 @@ classdef BPIC < handle
             HtH_off_sqr = HtH_off.^2;
             % constant values - inverse matrix
             mrc_mat = diag(1./diag(HtH));
-            zf_mat = inv(HtH);
             % constant values - BSO - mean - 1st iter
             bso_zigma_1 = eye(x_num);
             if self.bso_mean_init == BPIC.BSO_MEAN_INIT_MMSE
@@ -167,12 +166,12 @@ classdef BPIC < handle
                 bso_zigma_1 = mrc_mat;
             end
             if self.bso_mean_init == BPIC.BSO_MEAN_INIT_ZF
-                bso_zigma_1 = zf_mat;
+                bso_zigma_1 = inv(HtH);
             end
             % constant values - BSO - mean - other iteration
             bso_zigma_others = mrc_mat;
             if self.bso_mean_cal == BPIC.BSO_MEAN_CAL_ZF
-                bso_zigma_others = zf_mat;
+                bso_zigma_others = inv(HtH);
             end
             % constant values - BSO - variance
             bso_var_mat = 1./diag(HtH);
@@ -180,7 +179,7 @@ classdef BPIC < handle
                 bso_var_mat = diag(inv(HtH + No*eye(x_num)));
             end
             if self.bso_var_cal == BPIC.BSO_VAR_CAL_ZF
-                bso_var_mat = diag(zf_mat);
+                bso_var_mat = diag(inv(HtH));
             end
             bso_var_mat_sqr = bso_var_mat.^2;
             % constant values - DSC
@@ -189,7 +188,7 @@ classdef BPIC < handle
                 dsc_w = mrc_mat;
             end
             if self.dsc_ise == BPIC.DSC_ISE_ZF
-                dsc_w = zf_mat;
+                dsc_w = inv(HtH);
             end
             if self.dsc_ise == BPIC.DSC_ISE_MMSE
                 dsc_w = inv(HtH + No*eye(x_num));
