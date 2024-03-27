@@ -9,7 +9,7 @@ This detection method is proposed in [A Bayesian Receiver With Improved Complexi
 Currently, we offer three options to install this tool.
 * Install through `Matlab Add-Ons`
     * Install through Matlab `Get Add-Ons`: search `whatshow_phy_detect_bpic` and install it.
-    * Install through `.mltbx`: Go to ***releases*** to download the file in the latest release to install.
+    * Install through `.mltbx`: Go to ***Releases*** to download the file in the latest release to install.
 * Install through `pip`
     ```sh
     pip install whatshow-phy-detect-bpic
