@@ -54,7 +54,8 @@ with open(file_readme, "r") as readme:
     description = readme.read(); 
     txt_1_start = description.find("## How to install");
     txt_2_start = description.find("## How to use");
-    description_pypi = description[:txt_1_start] + description[txt_2_start:];
+    txt_3_start = description.find("## Samples");
+    description_pypi = description[:txt_1_start] + description[txt_2_start:txt_3_start];
 with open(path_dist + file_readme, "w") as readme_pypi:
     readme_pypi.write(description_pypi);
 
