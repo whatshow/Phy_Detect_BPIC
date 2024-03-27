@@ -47,6 +47,7 @@ class BPIC(object):
     # variables
     constellation = None;
     constellation_len = 0;
+    es = 1;
     bso_mean_init = None;
     bso_mean_cal = None;
     bso_var = None;
@@ -83,6 +84,8 @@ class BPIC(object):
         else:
             self.constellation_len = len(constellation);
             self.constellation = np.squeeze(constellation);
+        # inputs - constellation average power
+        self.es = np.sum(abs(self.constellation)**2)/self.constellation_len;
         # other configurations
         if bso_mean_init not in BPIC.BSO_MEAN_INIT_TYPES:
             raise Exception("1st iteration method in BSO to calculate the mean is not recognised.");
@@ -175,7 +178,7 @@ class BPIC(object):
         # constant values - BSO - mean - 1st iter
         bso_zigma_1 = self.eye(x_num);
         if self.bso_mean_init == BPIC.BSO_MEAN_INIT_MMSE:
-            bso_zigma_1 = inv(HtH + No*self.eye(x_num));
+            bso_zigma_1 = inv(HtH + No/self.es*self.eye(x_num));
         if self.bso_mean_init == BPIC.BSO_MEAN_INIT_MRC:
             bso_zigma_1 = mrc_mat;
         if self.bso_mean_init == BPIC.BSO_MEAN_INIT_ZF:
@@ -187,7 +190,7 @@ class BPIC(object):
         # constant values - BSO - variance
         bso_var_mat = np.expand_dims(1/self.diag(HtH), -1);
         if self.bso_var_cal == BPIC.BSO_VAR_CAL_MMSE:
-            bso_var_mat = np.expand_dims(self.diag(inv(HtH + No*self.eye(x_num))), -1);
+            bso_var_mat = np.expand_dims(self.diag(inv(HtH + No/self.es*self.eye(x_num))), -1);
         if self.bso_var_cal == BPIC.BSO_VAR_CAL_ZF:
             bso_var_mat = np.expand_dims(self.diag(inv(HtH)), -1);
         bso_var_mat_sqr = bso_var_mat**2;
@@ -198,7 +201,7 @@ class BPIC(object):
         if self.dsc_ise == BPIC.DSC_ISE_ZF:
             dsc_w = inv(HtH);
         if self.dsc_ise == BPIC.DSC_ISE_MMSE:
-            dsc_w = inv(HtH + No*self.eye(x_num));
+            dsc_w = inv(HtH + No/self.es*self.eye(x_num));
         
         # iterative detection
         x_dsc = self.zeros(x_num, 1);

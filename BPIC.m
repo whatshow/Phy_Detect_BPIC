@@ -41,6 +41,7 @@ classdef BPIC < handle
     properties
         constellation {mustBeNumeric}
         constellation_len {mustBeNumeric}
+        es = 1;                                             % constellation average power
         bso_mean_init = BPIC.BSO_MEAN_INIT_MMSE;            % default in Alva's paper
         bso_mean_cal = BPIC.BSO_MEAN_CAL_MRC;               % default in Alva's paper
         bso_var = BPIC.BSO_VAR_APPRO;                       % default in Alva's paper
@@ -96,6 +97,7 @@ classdef BPIC < handle
                 self.constellation = constellation;
                 self.constellation_len = length(constellation);
             end
+            self.es = sum(abs(self.constellation).^2)/self.constellation_len;   % inputs - constellation average power
             self.bso_mean_init = inPar.Results.bso_mean_init;
             self.bso_mean_cal = inPar.Results.bso_mean_cal;
             self.bso_var = inPar.Results.bso_var;
@@ -160,7 +162,7 @@ classdef BPIC < handle
             % constant values - BSO - mean - 1st iter
             bso_zigma_1 = eye(x_num);
             if self.bso_mean_init == BPIC.BSO_MEAN_INIT_MMSE
-                bso_zigma_1 = inv(HtH + No*eye(x_num));
+                bso_zigma_1 = inv(HtH + No/self.es*eye(x_num));
             end
             if self.bso_mean_init == BPIC.BSO_MEAN_INIT_MRC
                 bso_zigma_1 = mrc_mat;
@@ -176,7 +178,7 @@ classdef BPIC < handle
             % constant values - BSO - variance
             bso_var_mat = 1./diag(HtH);
             if self.bso_var_cal == BPIC.BSO_VAR_CAL_MMSE
-                bso_var_mat = diag(inv(HtH + No*eye(x_num)));
+                bso_var_mat = diag(inv(HtH + No/self.es*eye(x_num)));
             end
             if self.bso_var_cal == BPIC.BSO_VAR_CAL_ZF
                 bso_var_mat = diag(inv(HtH));
@@ -191,7 +193,7 @@ classdef BPIC < handle
                 dsc_w = inv(HtH);
             end
             if self.dsc_ise == BPIC.DSC_ISE_MMSE
-                dsc_w = inv(HtH + No*eye(x_num));
+                dsc_w = inv(HtH + No/self.es*eye(x_num));
             end
             
             % iterative detection
