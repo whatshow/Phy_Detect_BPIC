@@ -1,5 +1,5 @@
 # Bayesian PIC-DSC detector
-[![PyPi](https://img.shields.io/badge/PyPi-1.0.4-blue)](https://pypi.org/project/whatshow-phy-mod-otfs/) [![MathWorks](https://img.shields.io/badge/MathWorks-1.0.4-red)](https://mathworks.com/matlabcentral/fileexchange/161136-whatshow_phy_mod_otfs)
+[![PyPi](https://img.shields.io/badge/PyPi-1.0.5-blue)](https://pypi.org/project/whatshow-phy-mod-otfs/) [![MathWorks](https://img.shields.io/badge/MathWorks-1.0.5-red)](https://mathworks.com/matlabcentral/fileexchange/161136-whatshow_phy_mod_otfs)
 
 
 This detection method is proposed in [A Bayesian Receiver With Improved Complexity-Reliability Trade-Off in Massive MIMO Systems](https://ieeexplore.ieee.org/document/9464346) by **Alva Kosasih**. It has three modules: BSO does the parallel interference cancellation, BSE does the Bayesian symbol estimation, and DSC does the update.
@@ -66,6 +66,7 @@ All Bayesian PIC-DSC detector codes are uniform in matlab and python as a class 
     `@y`: the received signal, a vector<br>
     `@H`: the channel matrix, a matrix<br>
     `@No`: the noise power, a scalar<br>
+    `@sym_map`: whether use hard mapping<br>
     ```sh, c, matlab, python
     // symbol estimation - soft
     x_est = bpic.detect(y, H, No);
